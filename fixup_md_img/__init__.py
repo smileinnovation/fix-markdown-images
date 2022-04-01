@@ -49,12 +49,15 @@ def fix_md_file(mdcontent, mdpath, imagedir=None, dry_run=False) -> str:
                 continue
 
             origin = image
-            if image[-1] == ".":
-                image = image[:-1]
             if image in replacements:
+                # already replaced
                 continue
             if ext != image[-4:]:
-                replacements[image] = image + ext
+                replacements[image] = os.path.join(
+                    os.path.dirname(image),
+                    # drop old extension if any
+                    os.path.basename(image).split(".")[0] + ext,
+                )
                 print(f"{origin} -> {replacements[image]}")
             else:
                 print(f"{origin} already has the right extension")
@@ -65,7 +68,8 @@ def fix_md_file(mdcontent, mdpath, imagedir=None, dry_run=False) -> str:
                 os.rename(
                     impath,
                     os.path.join(
-                        os.path.dirname(impath), os.path.basename(replacements[image])
+                        os.path.dirname(impath),
+                        os.path.basename(replacements[image]),
                     ),
                 )
 
