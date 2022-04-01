@@ -37,7 +37,7 @@ def main():
         sys.exit(1)
 
     # get all markdown files
-    mdfiles = glob.glob(os.path.join(args.md, "*.md"))
+    mdfiles = glob.glob(os.path.join(args.md, "**/*.md"), recursive=True)
 
     # fix each markdown file
     for mdfile in mdfiles:
