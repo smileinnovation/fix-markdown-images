@@ -7,6 +7,7 @@ import re
 from PIL import Image
 
 IMG_REG = re.compile(r"!\[(.*?)\]\((.*?)\)")
+BAD_LAST_CHAR_REG = re.compile(r".*[\._\-]$")
 
 
 def get_extension(i):
@@ -34,6 +35,8 @@ def fix_md_file(mdcontent, mdpath, imagedir=None, dry_run=False) -> str:
         # replace image filename with extension
         for image in images:
             if imagedir is not None:
+                if image[0] == "/":
+                    image = image[1:]
                 impath = os.path.join(imagedir, image)
             else:
                 impath = os.path.join(os.path.dirname(mdpath), image)
@@ -52,11 +55,22 @@ def fix_md_file(mdcontent, mdpath, imagedir=None, dry_run=False) -> str:
             if image in replacements:
                 # already replaced
                 continue
-            if ext != image[-4:]:
+            # get the name of file without extension and the extension
+            image_w_ext = os.path.basename(os.path.splitext(image)[0])
+            image_ext = os.path.splitext(image)[1]
+            # if the last character is a dot, force the renaming
+            force = False
+            while BAD_LAST_CHAR_REG.search(image_w_ext):
+                print(f"{image_w_ext} has a bad last character")
+                image_w_ext = image_w_ext[:-1]
+                force = True
+
+            # if the extension is not the same, or if something is ugly in the image name, rewrite
+            # the image name
+            if ext != image_ext or force:
                 replacements[image] = os.path.join(
                     os.path.dirname(image),
-                    # drop old extension if any
-                    os.path.basename(image).split(".")[0] + ext,
+                    image_w_ext + ext,
                 )
                 print(f"{origin} -> {replacements[image]}")
             else:
@@ -69,7 +83,7 @@ def fix_md_file(mdcontent, mdpath, imagedir=None, dry_run=False) -> str:
                     impath,
                     os.path.join(
                         os.path.dirname(impath),
-                        os.path.basename(replacements[image]),
+                        os.path.basename(replacements[image]),  # contains the good name
                     ),
                 )
 
